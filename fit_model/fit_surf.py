@@ -13,22 +13,30 @@ import subprocess
 
 
 def main(subject,
-         sourcedata):
+         sourcedata,
+         trialwise,
+         clip=(-100, 100)):
 
     derivatives = op.join(sourcedata, 'derivatives')
 
-    layout = BIDSLayout(op.join(derivatives, 'glm_stim1_surf'), validate=False)
+    if trialwise:
+        layout = BIDSLayout(op.join(derivatives, 'glm_stim1_trialwise_surf'), validate=False)
+    else:
+        layout = BIDSLayout(op.join(derivatives, 'glm_stim1_surf'), validate=False)
 
     for hemi in ['L', 'R']:
         pes = layout.get(subject=subject, suffix=hemi)
 
         print(pes)
 
-        paradigm = np.log(pd.Series([5, 7, 10, 14, 20, 28] * len(pes)))
+        if trialwise:
+            paradigm = np.log(pd.Series(np.repeat([5, 7, 10, 14, 20, 28], 6).tolist() * len(pes)))
+        else:
+            paradigm = np.log(pd.Series([5, 7, 10, 14, 20, 28] * len(pes)))
 
         df = []
         for pe in pes:
-            d = pd.DataFrame(surface.load_surf_data(pe.path).T)
+            d = pd.DataFrame(np.clip(surface.load_surf_data(pe.path).T, clip[0], clip[1]))
             df.append(d)
 
         df = pd.concat(df)
@@ -42,8 +50,12 @@ def main(subject,
         costs, parameters, predictions = model.optimize(
             paradigm.values.ravel(), df.loc[:, mask].values)
 
-        base_dir = op.join(derivatives, 'modelfit_surf',
-                           f'sub-{subject}', 'func')
+        if trialwise:
+            base_dir = op.join(derivatives, 'modelfit_trialwise_surf',
+                               f'sub-{subject}', 'func')
+        else:
+            base_dir = op.join(derivatives, 'modelfit_surf',
+                               f'sub-{subject}', 'func')
 
         if not op.exists(base_dir):
             os.makedirs(base_dir)
@@ -88,7 +100,10 @@ def main(subject,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("subject")
+    parser.add_argument("--trialwise", action='store_true')
+
     args = parser.parse_args()
 
     main(int(args.subject),
-         sourcedata='/data/risk_precision/ds-numrisk')
+         sourcedata='/data/risk_precision/ds-numrisk',
+         trialwise=args.trialwise)
