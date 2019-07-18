@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #SBATCH --job-name=mriqc
-#SBATCH --output=logs/res_%A-%a.txt
+#SBATCH --output=logs/mriqc_%A-%a.txt
 #
 #SBATCH --ntasks=1
 #SBATCH --time=3:00:00
