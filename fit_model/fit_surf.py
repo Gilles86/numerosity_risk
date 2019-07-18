@@ -78,7 +78,7 @@ def main(subject,
         transformer.inputs.source_file = par_fn
         transformer.inputs.out_file = par_fn.replace('fsaverage6', 'fsaverage')
         # Disable on MAC OS X (SIP problem)
-        # transformer.run()
+        transformer.run()
 
         r2 = get_rsq(df.loc[:, mask].values, predictions).to_frame('r2').T
         r2.columns = df.loc[:, mask].columns
@@ -94,16 +94,18 @@ def main(subject,
         transformer.inputs.source_file = r2_fn
         transformer.inputs.out_file = r2_fn.replace('fsaverage6', 'fsaverage')
         # Disable on MAC OS X (SIP problem)
-        # transformer.run()
+        transformer.run()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("subject")
     parser.add_argument("--trialwise", action='store_true')
+    parser.add_argument("--sourcedata",
+                        default='/data/risk_precision/ds-numrisk')
+    parser.add_argument("subject", type=int)
 
     args = parser.parse_args()
 
     main(int(args.subject),
-         sourcedata='/data/risk_precision/ds-numrisk',
+         sourcedata=args.sourcedata,
          trialwise=args.trialwise)
