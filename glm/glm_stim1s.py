@@ -7,6 +7,7 @@ import numpy as np
 import re
 from nistats.first_level_model import FirstLevelModel
 from nilearn import image
+from sklearn.decomposition import PCA
 
 to_include = ['a_comp_cor_00',
               'a_comp_cor_01',
@@ -87,7 +88,15 @@ def main(subject,
             lambda x: 'stim2' if x.startswith('stim2') else x)
 
         model = FirstLevelModel(tr, drift_model=None, n_jobs=5, smoothing_fwhm=4.0)
-        model.fit(b.path, events_, confounds_, )
+        pca = PCA(n_components=7)
+
+        confounds_ -= confounds_.mean(0)
+        confounds_ /= confounds_.std(0)
+        confounds_pca = pca.fit_transform(confounds_[to_include])
+
+        events_['onset'] += tr
+
+        model.fit(b.path, events_, confounds_pca)
 
         base_dir = op.join(derivatives, 'glm_stim1', f'sub-{subject}', 'func')
 

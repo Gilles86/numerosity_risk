@@ -10,6 +10,7 @@ from nilearn import image
 from nistats.first_level_model import make_first_level_design_matrix, run_glm
 from nilearn import surface
 import nibabel as nb
+from sklearn.decomposition import PCA
 
 to_include = ['a_comp_cor_00',
               'a_comp_cor_01',
@@ -86,6 +87,11 @@ def main(subject,
         confounds_ = pd.read_csv(confounds_, sep='\t')
         confounds_ = confounds_[to_include].fillna(method='bfill')
 
+        pca = PCA(n_components=7)
+        confounds_ -= confounds_.mean(0)
+        confounds_ /= confounds_.std(0)
+        confounds_pca = pca.fit_transform(confounds_[to_include])
+
         events_ = events_df.loc[(subject, run), 'path']
         events_ = pd.read_csv(events_, sep='\t')
         events_['trial_type'] = events_['trial_type'].apply(
@@ -95,8 +101,8 @@ def main(subject,
 
         X = make_first_level_design_matrix(frametimes,
                                            events_,
-                                           add_regs=confounds_.values,
-                                           add_reg_names=confounds_.columns.tolist())
+                                           add_regs=confounds_pca,
+                                           add_reg_names=[f'confound_pca.{i}' for i in range(1, 8)])
 
         Y = surface.load_surf_data(b.path).T
         Y = (Y / Y.mean(0) * 100)

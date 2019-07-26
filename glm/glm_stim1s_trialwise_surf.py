@@ -10,6 +10,7 @@ from nilearn import image
 from nistats.first_level_model import make_first_level_design_matrix, run_glm
 from nilearn import surface
 import nibabel as nb
+from sklearn.decomposition import PCA
 
 to_include = ['a_comp_cor_00',
               'a_comp_cor_01',
@@ -91,6 +92,8 @@ def main(subject,
         events_['trial_type'] = events_['trial_type'].apply(
             lambda x: 'stim2' if x.startswith('stim2') else x)
 
+        events_['onset'] += tr
+
         # Split up over trials
         stim1_events = events_[events_.trial_type.apply(lambda x: x.startswith('stim1'))]
         def number_trials(d):
@@ -102,10 +105,14 @@ def main(subject,
 
         frametimes = np.arange(0, tr*len(confounds_), tr)
 
+        pca = PCA(n_components=7)
+        confounds_ -= confounds_.mean(0)
+        confounds_ /= confounds_.std(0)
+        confounds_pca = pca.fit_transform(confounds_[to_include])
+
         X = make_first_level_design_matrix(frametimes,
                                            events_,
-                                           add_regs=confounds_.values,
-                                           add_reg_names=confounds_.columns.tolist())
+                                           add_regs=confounds_pca.values)
 
         Y = surface.load_surf_data(b.path).T
         Y = (Y / Y.mean(0) * 100)
