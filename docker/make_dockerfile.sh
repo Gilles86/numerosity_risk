@@ -9,6 +9,7 @@ neurodocker generate docker --base ubuntu --pkg-manager apt --freesurfer version
       pip_install="nilearn
 		nipype
                   pybids
+		  nistats
 		  niworkflows" \
       create_env="neuro" \
       activate=true \
