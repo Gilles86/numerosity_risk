@@ -11,6 +11,8 @@ from nistats.first_level_model import make_first_level_design_matrix, run_glm
 from nilearn import surface
 import nibabel as nb
 from sklearn.decomposition import PCA
+from nipype.interfaces.freesurfer.utils import SurfaceTransform
+
 
 to_include = ['a_comp_cor_00',
               'a_comp_cor_01',
@@ -42,17 +44,29 @@ to_include = ['a_comp_cor_00',
 
 def main(subject,
          sourcedata,
-         derivatives):
+         derivatives,
+         smoothed,
+         n_jobs=5):
+
+    os.environ['SUBJECTS_DIR'] = op.join(derivatives, 'freesurfer')
+
     source_layout = BIDSLayout(sourcedata, validate=False, derivatives=False)
+
     fmriprep_layout = BIDSLayout(
         op.join(derivatives, 'fmriprep'), validate=False)
 
-    bold = fmriprep_layout.get(subject=subject,
-                               extension='func.gii')
-    bold = sorted([e for e in bold if 'fsaverage6' in e.filename],
-                  key=lambda x: x.run)
+    if smoothed:
+        bold_layout = BIDSLayout(
+            op.join(derivatives, 'smoothed'), validate=False)
+        bold = bold_layout.get(subject=subject,
+                                   extension='func.gii')
+    else:
+        bold = fmriprep_layout.get(subject=subject,
+                                   extension='func.gii')
 
-    reg = re.compile('.*_space-(?P<space>.+)_desc.*')
+        bold = sorted([e for e in bold if 'fsaverage6' in e.filename],
+                      key=lambda x: x.run)
+
 
     fmriprep_layout_df = fmriprep_layout.to_df()
     fmriprep_layout_df = fmriprep_layout_df[~fmriprep_layout_df.subject.isnull(
@@ -72,7 +86,10 @@ def main(subject,
 
     tr = source_layout.get_tr(bold[0].path)
 
-    base_dir = op.join(derivatives, 'glm_stim1_surf', f'sub-{subject}', 'func')
+    if smoothed:
+        base_dir = op.join(derivatives, 'glm_stim1_surf_smoothed', f'sub-{subject}', 'func')
+    else:
+        base_dir = op.join(derivatives, 'glm_stim1_surf', f'sub-{subject}', 'func')
 
     if not op.exists(base_dir):
         os.makedirs(base_dir)
@@ -108,7 +125,7 @@ def main(subject,
         Y = (Y / Y.mean(0) * 100)
         Y -= Y.mean(0)
 
-        fit = run_glm(Y, X, noise_model='ols')
+        fit = run_glm(Y, X, noise_model='ols', n_jobs=n_jobs)
         r = fit[1][0.0]
         betas = pd.DataFrame(r.theta, index=X.columns)
 
@@ -118,20 +135,38 @@ def main(subject,
             stim1.append(betas.loc[f'stim1-{stim}'])
 
         result = pd.concat(stim1, 1).T
+        print(result.shape)
 
         pes = nb.gifti.GiftiImage(header=nb.load(b.path).header,
-                                  darrays=[nb.gifti.GiftiDataArray(result)])
+                                  darrays=[nb.gifti.GiftiDataArray(row) for ix, row in result.iterrows()])
 
-        pes.to_filename(
-            op.join(base_dir,
-                f'sub-{subject}_run-{run}_desc-stims1_hemi-{hemi}.pe.gii'))
+        fn_template = op.join(base_dir, 'sub-{subject}_run-{run}_space-{space}_desc-stims1_hemi-{hemi}.pe.gii')
+        space = 'fsaverage6'
+
+        pes.to_filename(fn_template.format(**locals()))
+
+
+        transformer = SurfaceTransform(source_subject='fsaverage6',
+                                       target_subject='fsaverage',
+                                       hemi={'L': 'lh', 'R': 'rh'}[hemi])
+
+        transformer.inputs.source_file = pes.get_filename()
+        space = 'fsaverage'
+        transformer.inputs.out_file = fn_template.format(**locals())
+        # Disable on MAC OS X (SIP problem)
+        transformer.run()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("subject")
+    parser.add_argument("--unsmoothed",
+            dest="smoothed",
+            action='store_false')
+
     args = parser.parse_args()
 
     main(int(args.subject),
-         sourcedata='/data/risk_precision/ds-numrisk',
-         derivatives='/data/risk_precision/ds-numrisk/derivatives')
+         sourcedata='/data',
+         derivatives='/data/derivatives',
+         smoothed=args.smoothed)
