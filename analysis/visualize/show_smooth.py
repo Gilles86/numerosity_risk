@@ -7,7 +7,6 @@ import re
 import pandas as pd
 import scipy.stats as ss
 
-subject = 1
 derivatives = '/data/risk_precision/ds-numrisk/derivatives'
 
 layout_us = BIDSLayout(op.join(derivatives, 'glm_stim1_surf'), validate=False)
@@ -39,8 +38,11 @@ for smoothed in [False, True]:
 df = pd.concat(df)
 df = df.unstack('hemi').reorder_levels(['hemi', 'vertex'], axis=1).sort_index(axis=1)
 
-
-t = df.groupby('smoothed').apply(lambda d: pd.Series(ss.ttest_1samp(d, 0)[0], index=d.columns).T)
+df_subjectwise = df.groupby(['subject', 'smoothed']).mean()
+t = df_subjectwise.groupby('smoothed').apply(lambda d: pd.Series(ss.ttest_1samp(d, 0)[0], index=d.columns).T)
 
 t_v = cortex.Vertex(t.values, 'fsaverage')
-cortex.webshow(t_v)
+
+z = ss.norm.ppf(ss.t(df_subjectwise.shape[0] - 1).cdf(t))
+z_v = cortex.Vertex(z, 'fsaverage.annot')
+cortex.webshow(z_v)
