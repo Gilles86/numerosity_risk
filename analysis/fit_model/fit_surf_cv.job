@@ -1,0 +1,10 @@
+#!/bin/sh
+#SBATCH --job-name=fit_rf_model_cv
+#SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/fit_rf_model_cv.%A.%a.out
+#SBATCH --time=40:00
+#SBATCH --partition=gpu
+
+source $HOME/.bash_profile
+conda activate tf_gpu 
+python $HOME/git/numerosity_risk/fit_model/fit_surf_cv.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/
+
