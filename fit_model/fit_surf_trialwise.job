@@ -2,7 +2,7 @@
 #SBATCH --job-name=fit_rf_model
 #SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/%A.%a.out
 #SBATCH --error=/home/gholland/git/numerosity_risk/fit_model/.out/%A.%a.error
-#SBATCH --time=25:00
+#SBATCH --time=35:00
 #SBATCH --partition=gpu
 
 source $HOME/.bashrc

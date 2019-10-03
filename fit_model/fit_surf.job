@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --job-name=fit_rf_model
-#SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/%A.%a.out
-#SBATCH --error=/home/gholland/git/numerosity_risk/fit_model/.out/%A.%a.error
+#SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/fit_surf.%A.%a.out
+#SBATCH --error=/home/gholland/git/numerosity_risk/fit_model/.out/fit_surf.%A.%a.error
 #SBATCH --time=15:00
 #SBATCH --partition=gpu
 

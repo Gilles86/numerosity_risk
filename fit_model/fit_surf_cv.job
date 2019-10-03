@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --job-name=fit_rf_model_cv
 #SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/fit_rf_model_cv.%A.%a.out
-#SBATCH --time=40:00
+#SBATCH --time=45:00
 #SBATCH --partition=gpu
 
 source $HOME/.bash_profile
