@@ -7,4 +7,4 @@
 
 source $HOME/.bashrc
 conda activate tf_gpu 
-python $HOME/git/numerosity_risk/fit_model/decode.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/ --masks NPC1_L NPC2_L NPC3_L NF1_L NF2_L NTO_L NINS_L NINS_R
+python $HOME/git/numerosity_risk/fit_model/decode.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/ --masks NPC1_L NPC2_L NPC3_L NF1_L NF2_L NTO_L NINS_L
