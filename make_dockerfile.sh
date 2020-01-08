@@ -5,13 +5,14 @@ neurodocker generate docker --base ubuntu --pkg-manager apt --freesurfer version
        	--output=$DIR/Dockerfile \
   --install zsh wget git build-essential \
     --miniconda \
-      conda_install="python=3.7 pandas matplotlib scikit-learn seaborn ipython tensorflow" \
+      conda_install="python=3.7 pandas matplotlib scikit-learn seaborn ipython tensorflow pytables" \
       pip_install="nilearn
 		nipype
                   pybids
 		  nistats
 		  niworkflows
-		  tensorflow_probability" \
+		  tensorflow_probability
+		  https://github.com/Gilles86/hedfpy/archive/refactor_gilles.zip" \
       create_env="neuro" \
       activate=true \
    --run 'wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | zsh || true' \
@@ -20,3 +21,4 @@ neurodocker generate docker --base ubuntu --pkg-manager apt --freesurfer version
    --workdir /src \
    --copy braincoder /braincoder \
    --run-bash "source activate neuro && cd /braincoder && python setup.py develop --no-deps" \
+   --copy edf2asc /usr/bin/edf2asc
