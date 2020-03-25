@@ -1,0 +1,10 @@
+#!/bin/sh
+#SBATCH --job-name=decode_trialwise
+#SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/decode_trialwise.bilateral.%a.%A.out
+#SBATCH --error=/home/gholland/git/numerosity_risk/fit_model/.out/decode_trialwise.bilateral.%a.%A.error
+#SBATCH --time=3:00:00
+#SBATCH --partition=gpu
+
+source $HOME/.bashrc
+conda activate tf_gpu 
+python $HOME/git/numerosity_risk/fit_model/decode_bilateral.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/ --trialwise --masks NPC1 NPC2 NPC3 NF1 NF2 

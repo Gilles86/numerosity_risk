@@ -1,0 +1,10 @@
+#!/bin/sh
+#SBATCH --job-name=decode_runwise_R_natural_space
+#SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/decode_runwise.%A.%a.out
+#SBATCH --error=/home/gholland/git/numerosity_risk/fit_model/.out/decode_runwise.%A.%a.error
+#SBATCH --time=3:00:00
+#SBATCH --partition=gpu
+
+source $HOME/.bashrc
+conda activate tf_gpu 
+python $HOME/git/numerosity_risk/fit_model/decode.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/ --masks NPC1_R NPC2_R NPC3_R NF1_R NF2_R NTO_R NINS_R --natural_space

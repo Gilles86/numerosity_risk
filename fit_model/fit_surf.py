@@ -18,6 +18,7 @@ def main(subject,
          trialwise,
          progressbar=False,
          clip=(-100, 100),
+         log_space=True,
          smoothed=True):
 
     logger = logging.Logger('logger', level=logging.INFO)
@@ -25,6 +26,11 @@ def main(subject,
     logger.info('Smoothed: {}'.format(smoothed))
 
     derivatives = op.join(sourcedata, 'derivatives')
+
+    if log_space:
+        log_str = ''
+    else:
+        log_str = '_natural_space'
 
     if trialwise:
         if smoothed:
@@ -44,9 +50,12 @@ def main(subject,
         print(pes)
 
         if trialwise:
-            paradigm = np.log(pd.Series(np.repeat([5, 7, 10, 14, 20, 28], 6).tolist() * len(pes)))
+            paradigm = pd.Series(np.repeat([5, 7, 10, 14, 20, 28], 6).tolist() * len(pes))
         else:
-            paradigm = np.log(pd.Series([5, 7, 10, 14, 20, 28] * len(pes)))
+            paradigm = pd.Series([5, 7, 10, 14, 20, 28] * len(pes))
+
+        if log_space:
+            paradigm = np.log(paradigm)
 
         df = []
         for pe in pes:
@@ -66,17 +75,17 @@ def main(subject,
 
         if trialwise:
             if smoothed:
-                base_dir = op.join(derivatives, 'modelfit_trialwise_surf_smoothed',
+                base_dir = op.join(derivatives, f'modelfit_trialwise_surf_smoothed{log_str}',
                                    f'sub-{subject}', 'func')
             else:
-                base_dir = op.join(derivatives, 'modelfit_trialwise_surf',
+                base_dir = op.join(derivatives, f'modelfit_trialwise_surf{log_str}',
                                    f'sub-{subject}', 'func')
         else:
             if smoothed:
-                base_dir = op.join(derivatives, 'modelfit_surf_smoothed',
+                base_dir = op.join(derivatives, f'modelfit_surf_smoothed{log_str}',
                                    f'sub-{subject}', 'func')
             else:
-                base_dir = op.join(derivatives, 'modelfit_surf',
+                base_dir = op.join(derivatives, f'modelfit_surf{log_str}',
                                    f'sub-{subject}', 'func')
 
         if not op.exists(base_dir):
@@ -140,6 +149,7 @@ def main(subject,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--trialwise", action='store_true')
+    parser.add_argument("--natural_space", dest='log_space', action='store_false')
     parser.add_argument("--sourcedata",
                         default='/data/risk_precision/ds-numrisk')
     parser.add_argument("--progressbar", action='store_true')
@@ -153,4 +163,5 @@ if __name__ == '__main__':
          sourcedata=args.sourcedata,
          trialwise=args.trialwise,
          progressbar=args.progressbar,
+         log_space=args.log_space,
          smoothed=args.smoothed)

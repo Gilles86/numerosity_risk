@@ -7,5 +7,4 @@
 
 source $HOME/.bashrc
 conda activate tf_gpu 
-python $HOME/git/numerosity_risk/fit_model/fit_surf.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/
-
+python $HOME/git/numerosity_risk/fit_model/fit_surf.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/ --natural_space
