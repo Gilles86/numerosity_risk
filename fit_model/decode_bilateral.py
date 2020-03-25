@@ -187,35 +187,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, model, prog
             min_tau_ratio = 0.1
             stabilize_diagonal = 1e-2
             max_rho = 0.9
-            tau_init = None
-
-            if (subject in [35, 36]):
-                min_tau_ratio = .25
-                stabilize_diagonal = 0.25
-
-            if ~trialwise and (subject in [9, 13, 19, 48] + [2, 8, 14, 15, 20, 27, 29, 33, 38, 45, 53, 60, 61]):
-                min_tau_ratio = .25
-                stabilize_diagonal = 0.25
-
-            if ~trialwise and (subject in [8, 14, 45, 61]):
-                min_tau_ratio = 0.75
-
-            if ~trialwise and (subject in [14, 61]):
-                min_tau_ratio = 0.75
-                stabilize_diagonal = 0.25
-                tau_init = np.ones((n_voxels, 1)).astype(np.float32)
-
-            if trialwise and  (subject == 36):
-                min_tau_ratio = 0.75
-
-            if trialwise and (subject in [5,13,14,19,25,26,28,39,44,50,62]):
-                min_tau_ratio = .25
-                stabilize_diagonal = 0.25
-
-            if trialwise and (subject in [13,14,19,28,44,50,62]):
-                min_tau_ratio = .25
-                stabilize_diagonal = 0.25
-                tau_init = np.ones((n_voxels, 1)).astype(np.float32)
+            tau_init = np.ones((n_voxels, 1)).astype(np.float32)
 
             print(f'RUN {run}')
             print(f'STABILIZE DIAGONAL: {stabilize_diagonal}')
@@ -256,9 +228,9 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, model, prog
         pdfs = pd.concat(pdfs)
         
         if trialwise:
-            base_dir = op.join(derivatives, f'decoding_trialwise{model_ext}{smooth_ext}{log_ext}.v2', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_trialwise{model_ext}{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
         else:
-            base_dir = op.join(derivatives, f'decoding_runwise{model_ext}{smooth_ext}{log_ext}.v2', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_runwise{model_ext}{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
 
         if not op.exists(base_dir):
             os.makedirs(base_dir)

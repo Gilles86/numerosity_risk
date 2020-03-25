@@ -117,9 +117,6 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
             residuals.to_pickle('~/residuals.pkl')
             model.parameters.to_pickle('~/parameters.pkl')
 
-            #r2 = model.get_rsq(train.values)
-            #r2.to_pickle('~/r2.pkl')
-
             sm = model.to_stickmodel(basis_stimuli=stimulus_range)
 
             predictions = sm.get_predictions()
@@ -131,31 +128,8 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
             learning_rate = 0.001
             alpha_init = 0.5
             beta_init = 0.5
-            tau_init = False
+            tau_init = np.ones((train.shape[1], 1)).astype(np.float32)
 
-            if ~trialwise and (mask_str == 'NPC1_L') and (subject in [15, 26, 37, 38, 46, 53, 58, 59, 61]):
-                min_tau_ratio = 0.25
-                stabilize_diagonal = 0.25
-                tau_init = np.ones((train.shape[1], 1)).astype(np.float32)
-                print('YOOOOO')
-
-            if ~trialwise and (mask_str == 'NPC1_R') and (subject in [8, 26]):
-                min_tau_ratio = .25
-                stabilize_diagonal = 0.25
-                tau_init = np.ones((train.shape[1], 1)).astype(np.float32)
-
-            if trialwise and (mask_str == 'NPC1_L') and (subject in [18]):
-                min_tau_ratio = .25
-                stabilize_diagonal = 0.25
-                tau_init = np.ones((train.shape[1], 1)).astype(np.float32)
-
-            if trialwise and (mask_str == 'NPC1_R') and (subject in [25]):
-                min_tau_ratio = .25
-                stabilize_diagonal = 0.25
-                tau_init = np.ones((train.shape[1], 1)).astype(np.float32)
-
-            
-            #try:
             sm.fit_residuals(data=train, lambd=1.0, distance_matrix=distance_matrix,
                              progressbar=progressbar, residual_dist='gaussian',
                              stabilize_diagonal=stabilize_diagonal,
@@ -166,18 +140,12 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
                              learning_rate=learning_rate,
                              tau_init=tau_init,
                              max_rho=max_rho)
-            #except Exception as e:
-                #print('PROBLEM with run {}, mask mask'.format(run, mask_str, e))
-                #break
 
             lambd = 1.0
 
             pdf, map, sd, (lower, upper) = sm.get_stimulus_posterior(test, stimulus_range=stimulus_range, normalize=True)
 
             if log_space:
-
-                #for key in ['np.log(map)', 'map', 'sd', 'lower', 'upper']:
-                    #print(f'key:, {key}')
                 tmp = pd.concat((np.exp(map), map, sd, lower, upper),
                                 keys=['map', 'log(map)', 'sd', 'lower', 'upper'], axis=1)
             else:
@@ -203,9 +171,9 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
         pdfs = pd.concat(pdfs)
         
         if trialwise:
-            base_dir = op.join(derivatives, f'decoding_trialwise{smooth_ext}{log_ext}.v2', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_trialwise{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
         else:
-            base_dir = op.join(derivatives, f'decoding_runwise{smooth_ext}{log_ext}.v2', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_runwise{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
 
         if not op.exists(base_dir):
             os.makedirs(base_dir)
