@@ -196,6 +196,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, model, prog
             model.fit_residuals(data=train.loc[:, mask], lambd=1.0, distance_matrix=distance_matrix,
                              progressbar=progressbar, residual_dist='gaussian', stabilize_diagonal=stabilize_diagonal,
                                 min_tau_ratio=min_tau_ratio, max_rho=max_rho, 
+                                patience=0,
                                 tau_init=tau_init)
             lambd = 1.0
 
@@ -228,9 +229,9 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, model, prog
         pdfs = pd.concat(pdfs)
         
         if trialwise:
-            base_dir = op.join(derivatives, f'decoding_trialwise{model_ext}{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_trialwise{model_ext}{smooth_ext}{log_ext}.v5', f'sub-{subject}', 'func')
         else:
-            base_dir = op.join(derivatives, f'decoding_runwise{model_ext}{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_runwise{model_ext}{smooth_ext}{log_ext}.v5', f'sub-{subject}', 'func')
 
         if not op.exists(base_dir):
             os.makedirs(base_dir)

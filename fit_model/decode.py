@@ -136,6 +136,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
                              min_tau_ratio=min_tau_ratio,
                              rho_init=0.5,
                              alpha_init=alpha_init,
+                             patience=0,
                              beta_init=beta_init,
                              learning_rate=learning_rate,
                              tau_init=tau_init,
@@ -171,9 +172,9 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
         pdfs = pd.concat(pdfs)
         
         if trialwise:
-            base_dir = op.join(derivatives, f'decoding_trialwise{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_trialwise{smooth_ext}{log_ext}.v5', f'sub-{subject}', 'func')
         else:
-            base_dir = op.join(derivatives, f'decoding_runwise{smooth_ext}{log_ext}.v4', f'sub-{subject}', 'func')
+            base_dir = op.join(derivatives, f'decoding_runwise{smooth_ext}{log_ext}.v5', f'sub-{subject}', 'func')
 
         if not op.exists(base_dir):
             os.makedirs(base_dir)
