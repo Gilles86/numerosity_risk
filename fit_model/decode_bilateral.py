@@ -196,7 +196,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, model, prog
             model.fit_residuals(data=train.loc[:, mask], lambd=1.0, distance_matrix=distance_matrix,
                              progressbar=progressbar, residual_dist='gaussian', stabilize_diagonal=stabilize_diagonal,
                                 min_tau_ratio=min_tau_ratio, max_rho=max_rho, 
-                                patience=0,
+                                patience=10,
                                 tau_init=tau_init)
             lambd = 1.0
 
