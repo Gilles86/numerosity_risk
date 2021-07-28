@@ -16,7 +16,7 @@ def main(subject, sourcedata):
 
     derivatives_fmriprep = op.join(derivatives, 'fmriprep')
     derivatives_freesurfer = op.join(derivatives, 'freesurfer')
-    # os.environ['SUBJECTS_DIR'] = derivatives_freesurfer
+    os.environ['SUBJECTS_DIR'] = derivatives_freesurfer
 
     fn_template = op.join(derivatives_fmriprep,
         f'sub-{subject}',
@@ -24,6 +24,7 @@ def main(subject, sourcedata):
         f'sub-{subject}_task-numrisk_acq-*_run-*_space-fsaverage6_hemi-*.func.gii')
 
     fns = glob.glob(fn_template)
+    print(fns)
 
     workflow = pe.Workflow(name=f'smooth_sub-{subject}',
             base_dir='/scratch')
@@ -52,7 +53,7 @@ def main(subject, sourcedata):
     workflow.connect(input_node, 'surface_files', smoother, 'in_file')
     workflow.connect(input_node, ('surface_files', get_hemis), smoother, 'hemi')
 
-    def get_suffix(hemis):
+    def get_suffix(in_files):
         import re
         reg = re.compile('.*/(?P<subject>sub-[0-9]+)_task.*_hemi-(?P<hemi>L|R)\.func\.gii')
         hemis = [reg.match(fn).group(2) for fn in in_files]

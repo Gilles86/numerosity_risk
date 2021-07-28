@@ -5,14 +5,15 @@ import hedfpy
 import pandas as pd
 import numpy as np
 import argparse
+import resampy
 
 analysis_params = {
                 'sample_rate' : 500.0,
-                'lp' : 6.0,
-                'hp' : 0.01,
+                'lp' : 4.0,
+                'hp' : 0.05,
                 'normalization' : 'zscore',
-                'regress_blinks' : True,
-                'regress_sacs' : True,
+                'regress_blinks' : False,
+                'regress_sacs' : False,
                 'regress_xy' : False,
                 'use_standard_blinksac_kernels' : True,
                 }
@@ -99,15 +100,20 @@ def main(subject, sourcedata, rawdata):
         d['time'] = (d['time'] - start_ts) / 1000. - 1./analysis_params['sample_rate']
         d = d.set_index(pd.Index(d['time'], name='time'))
         d['interpolated'] = d[f'{eye}_interpolated_timepoints'].astype(bool)
-        d['pupil'] = d[f'{eye}_pupil_bp']
+        d['pupil'] = d[f'{eye}_pupil_bp_clean_zscore']
         d = d[['interpolated', 'pupil']]
-
 
         # Save everything
         saccades.to_csv(op.join(der_dir, f'sub-{subject}_run-{run}_saccades.tsv'), sep='\t', index=False)
         blinks.to_csv(op.join(der_dir, f'sub-{subject}_run-{run}_blinks.tsv'), sep='\t', index=False)
         d.to_csv(op.join(der_dir, f'sub-{subject}_run-{run}_pupil.tsv.gz'), sep='\t')
-        d.to_csv(op.join(der_dir, f'sub-{subject}_run-{run}_pupil.tsv'), sep='\t')
+
+        resample_factor = int(500 / 20)
+        d_ = resampy.resample(d['pupil'].values, 500, 20)
+        d = pd.DataFrame(d_, index=d.index[::resample_factor][:len(d_)], columns=['pupil'])
+        d.to_csv(op.join(der_dir, f'sub-{subject}_run-{run}_sr-20_pupil.tsv.gz'), sep='\t')
+
+
 
 
 if __name__ == '__main__':

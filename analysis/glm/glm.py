@@ -84,8 +84,10 @@ def main(subject,
 
         events_ = events_df.loc[(subject, run), 'path']
         events_ = pd.read_csv(events_, sep='\t')
-        events_['trial_type'] = events_['trial_type'].apply(
-            lambda x: 'stim2' if x.startswith('stim2') else x)
+        # events_['trial_type'] = events_['trial_type'].apply(
+            # lambda x: 'stim2' if x.startswith('stim2') else x)
+
+        events_['onset'] -= tr / 2.
 
         imgs.append(b.path)
         confounds.append(confounds_[to_include].fillna(method='bfill'))

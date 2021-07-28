@@ -8,7 +8,8 @@ import glob
 from matplotlib import colors, cm
 
 subject = 2
-derivatives = '/data/risk_precision/ds-numrisk/derivatives'
+# derivatives = '/data/risk_precision/ds-numrisk/derivatives'
+derivatives = '/Volumes/GdH_data/risk_precision/ds-numrisk/derivatives'
 viz_type = 'subject'
 viz_type = 'group'
 
@@ -214,8 +215,8 @@ plt.figure()
 tmp = r2s_mean_v.data
 sns.distplot(tmp[np.isfinite(tmp)], label='in-set R2s')
 
-tmp = r2s_trialwise_v.data
-sns.distplot(tmp[np.isfinite(tmp)], label='Trialwise R2s')
+# tmp = r2s_trialwise_v.data
+# sns.distplot(tmp[np.isfinite(tmp)], label='Trialwise R2s')
 
 sns.distplot(r2s_cv[np.isfinite(r2s_cv)], label='Cross-validated R2s')
 plt.title('r2')

@@ -99,10 +99,19 @@ def main(subject,
         hemi = b.entities['suffix']
     #     print(run)
 
+        print(fmriprep_layout_df.loc[(
+            subject, run)])
+        print(b.path)
+
+        # confounds_ = fmriprep_layout_df.loc[(
+            # subject, run), 'path'].iloc[0]
         confounds_ = fmriprep_layout_df.loc[(
-            subject, run), 'path'].iloc[0]
+            subject, run), 'path']
+        print(confounds_)
         confounds_ = pd.read_csv(confounds_, sep='\t')
         confounds_ = confounds_[to_include].fillna(method='bfill')
+
+        print(confounds_.shape)
 
         pca = PCA(n_components=7)
         confounds_ -= confounds_.mean(0)
@@ -111,8 +120,10 @@ def main(subject,
 
         events_ = events_df.loc[(subject, run), 'path']
         events_ = pd.read_csv(events_, sep='\t')
-        events_['trial_type'] = events_['trial_type'].apply(
-            lambda x: 'stim2' if x.startswith('stim2') else x)
+        # events_['trial_type'] = events_['trial_type'].apply(
+            # lambda x: 'stim2' if x.startswith('stim2') else x)
+
+        events_['onset'] -= tr / 2.
 
         frametimes = np.arange(0, tr*len(confounds_), tr)
 
@@ -124,6 +135,8 @@ def main(subject,
         Y = surface.load_surf_data(b.path).T
         Y = (Y / Y.mean(0) * 100)
         Y -= Y.mean(0)
+
+        print(Y.shape)
 
         fit = run_glm(Y, X, noise_model='ols', n_jobs=n_jobs)
         r = fit[1][0.0]

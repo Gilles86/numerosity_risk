@@ -19,13 +19,6 @@ to_include = ['a_comp_cor_00',
               'a_comp_cor_04',
               'dvars',
               'framewise_displacement',
-              'cosine00',
-              'cosine01',
-              'cosine02',
-              'cosine03',
-              'cosine04',
-              'cosine05',
-              'cosine06',
               'trans_x',
               'trans_x_derivative1',
               'trans_y',
@@ -42,15 +35,23 @@ to_include = ['a_comp_cor_00',
 
 def main(subject,
          sourcedata,
-         derivatives):
+         derivatives,
+         smoothed=True):
     source_layout = BIDSLayout(sourcedata, validate=False, derivatives=False)
     fmriprep_layout = BIDSLayout(
         op.join(derivatives, 'fmriprep'), validate=False)
 
-    bold = fmriprep_layout.get(subject=subject,
-                               extension='func.gii')
-    bold = sorted([e for e in bold if 'fsaverage6' in e.filename],
-                  key=lambda x: x.run)
+    if smoothed:
+        bold_layout = BIDSLayout(
+            op.join(derivatives, 'smoothed'), validate=False)
+        bold = bold_layout.get(subject=subject,
+                                   extension='func.gii')
+    else:
+        bold = fmriprep_layout.get(subject=subject,
+                                   extension='func.gii')
+
+        bold = sorted([e for e in bold if 'fsaverage6' in e.filename],
+                      key=lambda x: x.run)
 
     reg = re.compile('.*_space-(?P<space>.+)_desc.*')
 
@@ -72,7 +73,10 @@ def main(subject,
 
     tr = source_layout.get_tr(bold[0].path)
 
-    base_dir = op.join(derivatives, 'glm_stim1_trialwise_surf', f'sub-{subject}', 'func')
+    if smoothed:
+        base_dir = op.join(derivatives, 'glm_stim1_trialwise_surf_smoothed', f'sub-{subject}', 'func')
+    else:
+        base_dir = op.join(derivatives, 'glm_stim1_trialwise_surf', f'sub-{subject}', 'func')
 
     if not op.exists(base_dir):
         os.makedirs(base_dir)
@@ -83,7 +87,7 @@ def main(subject,
     #     print(run)
 
         confounds_ = fmriprep_layout_df.loc[(
-            subject, run), 'path'].iloc[0]
+            subject, run), 'path']
         confounds_ = pd.read_csv(confounds_, sep='\t')
         confounds_ = confounds_[to_include].fillna(method='bfill')
 
@@ -92,7 +96,7 @@ def main(subject,
         events_['trial_type'] = events_['trial_type'].apply(
             lambda x: 'stim2' if x.startswith('stim2') else x)
 
-        events_['onset'] += tr
+        events_['onset'] -= tr / 2.
 
         # Split up over trials
         stim1_events = events_[events_.trial_type.apply(lambda x: x.startswith('stim1'))]
@@ -112,7 +116,7 @@ def main(subject,
 
         X = make_first_level_design_matrix(frametimes,
                                            events_,
-                                           add_regs=confounds_pca.values)
+                                           add_regs=confounds_pca)
 
         Y = surface.load_surf_data(b.path).T
         Y = (Y / Y.mean(0) * 100)
@@ -130,13 +134,12 @@ def main(subject,
 
         result = pd.concat(stim1, 1).T
 
+        fn_template = op.join(base_dir, 'sub-{subject}_run-{run}_space-{space}_desc-stims1_hemi-{hemi}.pe.gii')
+        space = 'fsaverage6'
+
         pes = nb.gifti.GiftiImage(header=nb.load(b.path).header,
                                   darrays=[nb.gifti.GiftiDataArray(result)])
-
-        pes.to_filename(
-            op.join(base_dir,
-                f'sub-{subject}_run-{run}_desc-stims1_hemi-{hemi}.pe.gii'))
-
+        pes.to_filename(fn_template.format(**locals()))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -144,5 +147,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(int(args.subject),
-         sourcedata='/data/risk_precision/ds-numrisk',
-         derivatives='/data/risk_precision/ds-numrisk/derivatives')
+         sourcedata='/data',
+         derivatives='/data/derivatives')
