@@ -1,7 +1,7 @@
 from nilearn import surface
 import argparse
-from braincoder.models import VoxelwiseGaussianReceptiveFieldModel
-from braincoder.utils import get_rsq, get_r
+from braincoder.models import GaussianPRF
+from braincoder.optimize import ParameterFitter
 from bids import BIDSLayout
 import pandas as pd
 import os
@@ -34,14 +34,18 @@ def main(subject,
 
     if trialwise:
         if smoothed:
-            layout = BIDSLayout(op.join(derivatives, 'glm_stim1_trialwise_surf_smoothed'), validate=False)
+            layout = BIDSLayout(
+                op.join(derivatives, 'glm_stim1_trialwise_surf_smoothed'), validate=False)
         else:
-            layout = BIDSLayout(op.join(derivatives, 'glm_stim1_trialwise_surf'), validate=False)
+            layout = BIDSLayout(
+                op.join(derivatives, 'glm_stim1_trialwise_surf'), validate=False)
     else:
         if smoothed:
-            layout = BIDSLayout(op.join(derivatives, 'glm_stim1_surf_smoothed'), validate=False)
+            layout = BIDSLayout(
+                op.join(derivatives, 'glm_stim1_surf_smoothed'), validate=False)
         else:
-            layout = BIDSLayout(op.join(derivatives, 'glm_stim1_surf'), validate=False)
+            layout = BIDSLayout(
+                op.join(derivatives, 'glm_stim1_surf'), validate=False)
 
     for hemi in ['L', 'R']:
         pes = layout.get(subject=subject, suffix=hemi)
@@ -50,7 +54,8 @@ def main(subject,
         print(pes)
 
         if trialwise:
-            paradigm = pd.Series(np.repeat([5, 7, 10, 14, 20, 28], 6).tolist() * len(pes))
+            paradigm = pd.Series(
+                np.repeat([5, 7, 10, 14, 20, 28], 6).tolist() * len(pes))
         else:
             paradigm = pd.Series([5, 7, 10, 14, 20, 28] * len(pes))
 
@@ -59,99 +64,116 @@ def main(subject,
 
         df = []
         for pe in pes:
-            d = pd.DataFrame(np.clip(surface.load_surf_data(pe.path).T, clip[0], clip[1]))
+            d = pd.DataFrame(
+                np.clip(surface.load_surf_data(pe.path).T, clip[0], clip[1]))
             df.append(d)
 
-        df = pd.concat(df)
+        data = pd.concat(df)
 
-        mask = ~df.isnull().any(0)
-        # mask = mask & (np.random.rand(df.shape[1]) < 0.001)
+        print(df)
 
-        print('fitting {} time series'.format(mask.sum()))
+        model = GaussianPRF()
 
-        model = VoxelwiseGaussianReceptiveFieldModel(positive_amplitudes=False)
-        costs, parameters, predictions = model.fit_parameters(
-            paradigm.values.ravel(), df.loc[:, mask].values, progressbar=progressbar)
+        mus = np.linspace(0, np.log(80), 20, dtype=np.float32)
+        sds = np.linspace(.01, 2, 15, dtype=np.float32)
+        amplitudes = np.linspace(1e-6, 10, 20, dtype=np.float32)
+        baselines = np.linspace(-1., 2., 4, endpoint=True, dtype=np.float32)
+
+        optimizer = ParameterFitter(model, data, paradigm)
+
+        grid_parameters = optimizer.fit_grid(mus, sds, amplitudes, baselines)
+
+        r2 = optimizer.get_rsq(grid_parameters)
+        print(r2)
+
+        # costs, parameters, predictions = model.fit_parameters(
+        # paradigm.values.ravel(), df.loc[:, mask].values, progressbar=progressbar)
 
         if trialwise:
             if smoothed:
-                base_dir = op.join(derivatives, f'modelfit_trialwise_surf_smoothed{log_str}',
+                base_dir = op.join(derivatives, f'modelfit2_trialwise_surf_smoothed{log_str}',
                                    f'sub-{subject}', 'func')
             else:
-                base_dir = op.join(derivatives, f'modelfit_trialwise_surf{log_str}',
+                base_dir = op.join(derivatives, f'modelfit2_trialwise_surf{log_str}',
                                    f'sub-{subject}', 'func')
         else:
             if smoothed:
-                base_dir = op.join(derivatives, f'modelfit_surf_smoothed{log_str}',
+                base_dir = op.join(derivatives, f'modelfit2_surf_smoothed{log_str}',
                                    f'sub-{subject}', 'func')
             else:
-                base_dir = op.join(derivatives, f'modelfit_surf{log_str}',
+                base_dir = op.join(derivatives, f'modelfit2_surf{log_str}',
                                    f'sub-{subject}', 'func')
 
         if not op.exists(base_dir):
             os.makedirs(base_dir)
 
-        print(parameters)
+        def write_gifti(d, header, hemi, fn):
 
-        parameters = parameters.T
-        parameters.columns = df.loc[:, mask].columns
+            if d.ndim == 1:
+                darrays = [nb.gifti.GiftiDataArray(data=d)]
+            else:
+                darrays = [nb.gifti.GiftiDataArray(data=d_) for d_ in d]
 
-        pars_df = pd.DataFrame(columns=df.columns)
-        pars_df = pd.concat((pars_df, parameters))
+            im = nb.gifti.GiftiImage(header=header, darrays=darrays)
+            im.to_filename(fn)
 
-        par_fn = op.join(
-            base_dir, f'sub-{subject}_space-fsaverage6_desc-pars_hemi-{hemi}.func.gii')
+        def transform_to_fsaverage(fn):
+            os.environ['SUBJECTS_DIR'] = op.join(sourcedata, 'derivatives', 'freesurfer')
+            transformer = SurfaceTransform(source_subject='fsaverage6',
+                                           target_subject='fsaverage',
+                                           # subjects_dir=op.join(sourcedata, 'derivatives', 'freesurfer'),
+                                           hemi={'L': 'lh', 'R': 'rh'}[hemi])
 
-        nb.gifti.GiftiImage(header=nb.load(pe.path).header, darrays=[nb.gifti.GiftiDataArray(data=p.astype(float)) for _,
-                                                                     p in pars_df.iterrows()]).to_filename(par_fn)
+            transformer.inputs.source_file = fn
+            transformer.inputs.out_file = fn.replace('fsaverage6', 'fsaverage')
+            transformer.run()
 
-        transformer = SurfaceTransform(source_subject='fsaverage6',
-                                       target_subject='fsaverage',
-                                       hemi={'L': 'lh', 'R': 'rh'}[hemi])
+        fn = op.join(
+            base_dir, f'sub-{subject}_space-fsaverage6_desc-r2.grid_hemi-{hemi}.func.gii')
+        write_gifti(r2, nb.load(pe.path).header, hemi, fn)
+        print(f'Wrote r2 to {fn}')
+        transform_to_fsaverage(fn)
+        print(f'Transformed r2 to fsaverage')
 
-        transformer.inputs.source_file = par_fn
-        transformer.inputs.out_file = par_fn.replace('fsaverage6', 'fsaverage')
-        # Disable on MAC OS X (SIP problem)
-        transformer.run()
+        for par in grid_parameters.columns:
+            fn = op.join(
+                base_dir, f'sub-{subject}_space-fsaverage6_desc-{par}.grid_hemi-{hemi}.func.gii')
+            write_gifti(grid_parameters[par], nb.load(pe.path).header, hemi, fn)
+            print(f'Wrote {par} to {fn}')
+            transform_to_fsaverage(fn)
+            print(f'Transformed {par} to fsaverage')
 
-        r2 = get_rsq(df.loc[:, mask].values, predictions).to_frame('r2').T
-        r2.columns = df.loc[:, mask].columns
-        r2_df = pd.DataFrame(columns=df.columns)
-        r2_df = pd.concat((r2_df, r2), axis=0)
+        parameters = optimizer.fit(init_pars=grid_parameters.values.astype(
+            np.float32), learning_rate=.1, store_intermediate_parameters=False, max_n_iterations=5000)
 
-        r2_fn = op.join(
-            base_dir, f'sub-{subject}_space-fsaverage6_desc-r2_hemi-{hemi}.func.gii')
+        print(parameters == grid_parameters)
 
-        nb.gifti.GiftiImage(header=nb.load(pe.path).header, darrays=[nb.gifti.GiftiDataArray(data=r.astype(float)) for _,
-                                                                     r in r2_df.iterrows()]).to_filename(r2_fn)
+        r2 = optimizer.get_rsq()
 
-        transformer.inputs.source_file = r2_fn
-        transformer.inputs.out_file = r2_fn.replace('fsaverage6', 'fsaverage')
-        # Disable on MAC OS X (SIP problem)
-        transformer.run()
+        fn = op.join(
+            base_dir, f'sub-{subject}_space-fsaverage6_desc-r2.optim_hemi-{hemi}.func.gii')
+        write_gifti(r2, nb.load(pe.path).header, hemi, fn)
+        print(f'Wrote r2 to {fn}')
+        transform_to_fsaverage(fn)
+        print(f'Transformed r2 to fsaverage')
 
-        corr = get_r(df.loc[:, mask].values, predictions).to_frame('corr').T
-        corr.columns = df.loc[:, mask].columns
-        corr_df = pd.DataFrame(columns=df.columns)
-        corr_df = pd.concat((corr_df, corr), axis=0)
+        for par in parameters.columns:
+            fn = op.join(
+                base_dir, f'sub-{subject}_space-fsaverage6_desc-{par}.optim_hemi-{hemi}.func.gii')
+            write_gifti(parameters[par], nb.load(
+                pe.path).header, hemi, fn)
+            print(f'Wrote {par} to {fn}')
+            transform_to_fsaverage(fn)
+            print(f'Transformed {par} to fsaverage')
 
-        corr_fn = op.join(
-            base_dir, f'sub-{subject}_space-fsaverage6_desc-corr_hemi-{hemi}.func.gii')
-
-        nb.gifti.GiftiImage(header=nb.load(pe.path).header, darrays=[nb.gifti.GiftiDataArray(data=r.astype(float)) for _,
-                                                                     r in corr_df.iterrows()]).to_filename(corr_fn)
-
-        transformer.inputs.source_file = corr_fn
-        transformer.inputs.out_file = corr_fn.replace('fsaverage6', 'fsaverage')
-        # Disable on MAC OS X (SIP problem)
-        transformer.run()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--trialwise", action='store_true')
-    parser.add_argument("--natural_space", dest='log_space', action='store_false')
+    parser.add_argument("--natural_space", dest='log_space',
+                        action='store_false')
     parser.add_argument("--sourcedata",
-                        default='/data/risk_precision/ds-numrisk')
+                        default='/data/ds-numrisk')
     parser.add_argument("--progressbar", action='store_true')
     parser.add_argument("subject", type=int)
     parser.add_argument("--unsmoothed", dest='smoothed',
