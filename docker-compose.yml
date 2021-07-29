@@ -6,6 +6,6 @@ services:
     volumes:
       - ./analysis:/src
       - ./braincoder:/braincoder
-      - /Volumes/GdH_data/risk_precision/ds-numrisk:/data
+      - /data:/data
       - /Volumes/GdH_data/risk_precision/:/raw
       - $FREESURFER_HOME/license.txt:/opt/freesurfer-6.0.0/license.txt
