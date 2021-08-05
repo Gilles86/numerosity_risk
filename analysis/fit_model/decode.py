@@ -92,7 +92,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
         problem_mask = d.isnull().any(0) | (d.std(0) < 1e-4) | (d.std(0).isnull())
         mask = (mask > 0) & ~problem_mask.values
 
-        dist_matrix = op.join(derivatives, 'surface_masks.v2',
+        dist_matrix = op.join(derivatives, 'surface_masks.v3',
                               f'desc-distance_matrix-{mask_str}_space-fsaverage6_hemi-{hemi}.gii')
         dist_matrix = surface.load_surf_data(dist_matrix)
 
