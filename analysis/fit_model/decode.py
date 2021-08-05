@@ -86,7 +86,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
             raise Exception('Which hemi is this mask?')
 
         mask = surface.load_surf_data(op.join(
-            derivatives, f'surface_masks.v2/desc-{mask_str}_space-fsaverage6_hemi-{hemi}.label.gii'))
+            derivatives, f'surface_masks.v3/desc-{mask_str}_space-fsaverage6_hemi-{hemi}.label.gii'))
 
         d = data.loc[:, hemi]
         problem_mask = d.isnull().any(0) | (d.std(0) < 1e-4) | (d.std(0).isnull())

@@ -74,10 +74,10 @@ def main(subject,
 
         model = GaussianPRF()
 
-        mus = np.linspace(0, np.log(80), 20, dtype=np.float32)
-        sds = np.linspace(.01, 2, 15, dtype=np.float32)
-        amplitudes = np.linspace(1e-6, 10, 20, dtype=np.float32)
-        baselines = np.linspace(-1., 2., 4, endpoint=True, dtype=np.float32)
+        mus = np.linspace(0, np.log(80), 40, dtype=np.float32)
+        sds = np.linspace(.01, 2, 20, dtype=np.float32)
+        amplitudes = np.linspace(1e-6, 10, 15, dtype=np.float32)
+        baselines = np.linspace(-3., 3., 15, endpoint=True, dtype=np.float32)
 
         optimizer = ParameterFitter(model, data, paradigm)
 
@@ -85,6 +85,12 @@ def main(subject,
 
         r2 = optimizer.get_rsq(grid_parameters)
         print(r2)
+        print(r2.mean())
+
+        refined_parameters = optimizer.refine_baseline_and_amplitude(grid_parameters)
+        r2 = optimizer.get_rsq(refined_parameters)
+        print(r2)
+        print(r2.mean())
 
         # costs, parameters, predictions = model.fit_parameters(
         # paradigm.values.ravel(), df.loc[:, mask].values, progressbar=progressbar)
@@ -122,6 +128,7 @@ def main(subject,
             transformer = SurfaceTransform(source_subject='fsaverage6',
                                            target_subject='fsaverage',
                                            # subjects_dir=op.join(sourcedata, 'derivatives', 'freesurfer'),
+                                           terminal_output='none',
                                            hemi={'L': 'lh', 'R': 'rh'}[hemi])
 
             transformer.inputs.source_file = fn
@@ -138,17 +145,19 @@ def main(subject,
         for par in grid_parameters.columns:
             fn = op.join(
                 base_dir, f'sub-{subject}_space-fsaverage6_desc-{par}.grid_hemi-{hemi}.func.gii')
-            write_gifti(grid_parameters[par], nb.load(pe.path).header, hemi, fn)
+            write_gifti(refined_parameters[par], nb.load(pe.path).header, hemi, fn)
             print(f'Wrote {par} to {fn}')
             transform_to_fsaverage(fn)
             print(f'Transformed {par} to fsaverage')
 
-        parameters = optimizer.fit(init_pars=grid_parameters.values.astype(
-            np.float32), learning_rate=.1, store_intermediate_parameters=False, max_n_iterations=5000)
+        parameters = optimizer.fit(init_pars=refined_parameters.values.astype(
+            np.float32), learning_rate=.1, store_intermediate_parameters=False, max_n_iterations=25000,
+            lag=1000)
 
         print(parameters == grid_parameters)
 
         r2 = optimizer.get_rsq()
+        print(r2.mean())
 
         fn = op.join(
             base_dir, f'sub-{subject}_space-fsaverage6_desc-r2.optim_hemi-{hemi}.func.gii')
