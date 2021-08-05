@@ -1,11 +1,22 @@
-#!/bin/sh
-#SBATCH --job-name=fit_rf_model
-#SBATCH --output=/home/gholland/git/numerosity_risk/fit_model/.out/%A.%a.out
-#SBATCH --error=/home/gholland/git/numerosity_risk/fit_model/.out/%A.%a.error
-#SBATCH --time=15:00
-#SBATCH --partition=gpu
+#!/bin/bash
+#SBATCH --job-name=fit_surf_numrisk_cv
+#SBATCH --output=/home/cluster/gdehol/logs/fit_surf_numrisk_cv_%A-%a.txt
+#SBATCH --partition=volta
+#SBATCH --ntasks=1
+#SBATCH --mem=32G
+#SBATCH --gres gpu:1
+#SBATCH --time=30:00
+module load volta
+module load nvidia/cuda11.2-cudnn8.1.0
 
-source $HOME/.bashrc
-conda activate tf_gpu 
-python $HOME/git/numerosity_risk/fit_model/fit_surf.py $SLURM_ARRAY_TASK_ID --sourcedata=$HOME/data/risk_precision/ds-numrisk/
+. $HOME/init_conda.sh
+. $HOME/init_freesurfer.sh
+#. $HOME/bashrc.sh
+
+export PARTICIPANT_LABEL=$(printf "%02d" $SLURM_ARRAY_TASK_ID)
+
+source activate tf2-gpu
+
+python $HOME/git/numerosity_risk/analysis/fit_model/fit_surf.py $SLURM_ARRAY_TASK_ID --sourcedata=/scratch/gdehol/ds-numrisk
+python $HOME/git/numerosity_risk/analysis/fit_model/fit_surf.py $SLURM_ARRAY_TASK_ID --trialwise --sourcedata=/scratch/gdehol/ds-numrisk
 

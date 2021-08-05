@@ -80,25 +80,32 @@ def main(subject,
             test = data.loc[run]
             model = GaussianPRF()
 
-            mus = np.linspace(0, np.log(80), 20, dtype=np.float32)
-            sds = np.linspace(.01, 2, 15, dtype=np.float32)
-            amplitudes = np.linspace(1e-6, 10, 20, dtype=np.float32)
-            baselines = np.linspace(-1., 2., 4, endpoint=True, dtype=np.float32)
 
-            optimizer = ParameterFitter(model, train, train.index.get_level_values('number'))
+            mus = np.linspace(0, np.log(80), 40, dtype=np.float32)
+            sds = np.linspace(.01, 2, 20, dtype=np.float32)
+            amplitudes = np.linspace(1e-6, 10, 15, dtype=np.float32)
+            baselines = np.linspace(-3., 3., 15, endpoint=True, dtype=np.float32)
+
+            paradigm_train = train.index.get_level_values('number').to_frame().astype(np.float32)
+            paradigm_train.index = train.index
+
+            paradigm_test = test.index.get_level_values('number').to_frame().astype(np.float32)
+            paradigm_test.index = test.index
+
+            print(paradigm_train)
+            print(train)
+
+            optimizer = ParameterFitter(model, train, paradigm=paradigm_train)
 
             grid_parameters = optimizer.fit_grid(mus, sds, amplitudes, baselines)
 
-            predictions = model.predict(parameters=grid_parameters, paradigm=test.index.get_level_values('number'))
+            grid_parameters = optimizer.refine_baseline_and_amplitude(grid_parameters)
+
+            predictions = model.predict(parameters=grid_parameters, paradigm=paradigm_test)
 
             predictions.index = test.index
-            resid = test - predictions
-            print((resid**2).sum(0))
-            print(((test - test.mean(0))**2).sum(0))
 
             r2 = get_rsq(test, predictions)
-            print(predictions)
-            print(test)
             print(r2)
 
             if trialwise:
@@ -156,26 +163,32 @@ def main(subject,
                 transform_to_fsaverage(fn)
                 print(f'Transformed {par} to fsaverage')
 
-            # parameters = optimizer.fit(init_pars=grid_parameters.values.astype(
-                # np.float32), learning_rate=.1, store_intermediate_parameters=False, max_n_iterations=5000)
+            parameters = optimizer.fit(init_pars=grid_parameters.values.astype(
+                np.float32), learning_rate=.1, store_intermediate_parameters=False, max_n_iterations=25000, 
+                lag=1000)
 
-            # r2 = optimizer.get_rsq()
 
-            # fn = op.join(
-                # base_dir, f'sub-{subject}_space-fsaverage6_desc-r2.optim_hemi-{hemi}.func.gii')
-            # write_gifti(r2, nb.load(pe.path).header, hemi, fn)
-            # print(f'Wrote r2 to {fn}')
-            # transform_to_fsaverage(fn)
-            # print(f'Transformed r2 to fsaverage')
+            predictions = model.predict(parameters=parameters, paradigm=paradigm_test)
+            predictions.index = test.index
 
-            # for par in parameters.columns:
-                # fn = op.join(
-                    # base_dir, f'sub-{subject}_space-fsaverage6_desc-{par}.optim_hemi-{hemi}.func.gii')
-                # write_gifti(parameters[par], nb.load(
-                    # pe.path).header, hemi, fn)
-                # print(f'Wrote {par} to {fn}')
-                # transform_to_fsaverage(fn)
-                # print(f'Transformed {par} to fsaverage')
+            r2 = get_rsq(test, predictions)
+            print(r2)
+
+            fn = op.join(
+                base_dir, f'sub-{subject}_run-{run}_space-fsaverage6_desc-r2.optim_hemi-{hemi}.func.gii')
+            write_gifti(r2, nb.load(pe.path).header, hemi, fn)
+            print(f'Wrote r2 to {fn}')
+            transform_to_fsaverage(fn)
+            print(f'Transformed r2 to fsaverage')
+
+            for par in parameters.columns:
+                fn = op.join(
+                    base_dir, f'sub-{subject}_run-{run}_space-fsaverage6_desc-{par}.optim_hemi-{hemi}.func.gii')
+                write_gifti(parameters[par], nb.load(
+                    pe.path).header, hemi, fn)
+                print(f'Wrote {par} to {fn}')
+                transform_to_fsaverage(fn)
+                print(f'Transformed {par} to fsaverage')
 
 
 if __name__ == '__main__':
