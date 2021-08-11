@@ -3,7 +3,8 @@
 #SBATCH --output=/home/cluster/gdehol/logs/fit_surf_numrisk_cv_%A-%a.txt
 #SBATCH --partition=volta
 #SBATCH --ntasks=1
-#SBATCH --mem=32G
+#SBATCH --mem=64G
+#SBATCH -c4
 #SBATCH --gres gpu:1
 #SBATCH --time=3:00:00
 module load volta
@@ -18,4 +19,4 @@ export PARTICIPANT_LABEL=$(printf "%02d" $SLURM_ARRAY_TASK_ID)
 source activate tf2-gpu
 
 python $HOME/git/numerosity_risk/analysis/fit_model/fit_surf_cv.py $SLURM_ARRAY_TASK_ID --trialwise --sourcedata=/scratch/gdehol/ds-numrisk
-python $HOME/git/numerosity_risk/analysis/fit_model/fit_surf_cv.py $SLURM_ARRAY_TASK_ID --sourcedata=/scratch/gdehol/ds-numrisk
+#python $HOME/git/numerosity_risk/analysis/fit_model/fit_surf_cv.py $SLURM_ARRAY_TASK_ID --sourcedata=/scratch/gdehol/ds-numrisk
