@@ -81,8 +81,8 @@ def main(subject,
             model = GaussianPRF()
 
 
-            mus = np.linspace(0, np.log(80), 40, dtype=np.float32)
-            sds = np.linspace(.01, 2, 20, dtype=np.float32)
+            mus = np.linspace(0, np.log(80), 25, dtype=np.float32)
+            sds = np.linspace(.01, 2, 15, dtype=np.float32)
             amplitudes = np.linspace(1e-6, 10, 15, dtype=np.float32)
             baselines = np.linspace(-3., 3., 15, endpoint=True, dtype=np.float32)
 
@@ -95,8 +95,7 @@ def main(subject,
             print(paradigm_train)
             print(train)
 
-            optimizer = ParameterFitter(model, train, paradigm=paradigm_train)
-
+            optimizer = ParameterFitter(model, train, paradigm=paradigm_train, memory_limit=300000000)
             grid_parameters = optimizer.fit_grid(mus, sds, amplitudes, baselines)
 
             grid_parameters = optimizer.refine_baseline_and_amplitude(grid_parameters)

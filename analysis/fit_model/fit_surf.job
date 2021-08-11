@@ -19,4 +19,3 @@ source activate tf2-gpu
 
 python $HOME/git/numerosity_risk/analysis/fit_model/fit_surf.py $SLURM_ARRAY_TASK_ID --sourcedata=/scratch/gdehol/ds-numrisk
 python $HOME/git/numerosity_risk/analysis/fit_model/fit_surf.py $SLURM_ARRAY_TASK_ID --trialwise --sourcedata=/scratch/gdehol/ds-numrisk
-
