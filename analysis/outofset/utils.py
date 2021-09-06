@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.model_selection import LeaveOneOut, KFold, LeavePOut
 from sklearn import linear_model
 from tqdm import tqdm
+import scipy.stats as ss
 
 
 @contextlib.contextmanager
@@ -27,6 +28,21 @@ def tqdm_joblib(tqdm_object):
         joblib.parallel.BatchCompletionCallBack = old_batch_callback
         tqdm_object.close()
 
+
+def get_out_of_set_r(test, train, x, y):
+
+    intercept_train = np.ones((len(train) ,1 ))
+    x_train = np.concatenate((intercept_train, train[x]), 1)
+
+    beta = np.linalg.lstsq(x_train, train[y], rcond=-1)[0]
+
+    intercept_test = np.ones((len(test), 1))
+    x_test = np.concatenate((intercept_test, test[x]), 1)
+    predicted = x_test @ beta
+
+    return ss.pearsonr(test[y], predicted)[0]
+
+    # return np.argmax(predicted) == np.argmax(test[y])
 
 def get_out_of_set_accuracy(test, train, x, y):
 
