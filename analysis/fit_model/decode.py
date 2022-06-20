@@ -1,3 +1,4 @@
+import os
 import os.path as op
 import braincoder
 import pandas as pd
@@ -72,10 +73,10 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
     data['log(stimulus)'] = np.log(data.index.get_level_values('stimulus'))
 
     data = data.set_index('log(stimulus)', append=True)
-    stimulus_range = np.geomspace(1, 50, 200).astype(np.float32)
+    wwt_stimulus_range = np.geomspace(1., 140., 200, endpoint=True).astype(np.float32)
 
     if log_space:
-        stimulus_range = np.log(stimulus_range)
+        wwt_stimulus_range = np.log(wwt_stimulus_range)
 
     for mask_str in masks:
 
@@ -141,7 +142,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
         pdfs = []
 
         target_dir = op.join(
-            derivatives, f'decoding2{trialwise_ext}{smooth_ext}{distance_ext}', f'sub-{subject}', 'func')
+            derivatives, f'decoding3{trialwise_ext}{smooth_ext}{distance_ext}', f'sub-{subject}', 'func')
 
         if not op.exists(target_dir):
             os.makedirs(target_dir)
@@ -230,7 +231,7 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
 
             model = GaussianPRF(paradigm=paradigm,
                                 data=train, parameters=parameters)
-            pseudoWWT = model.init_pseudoWWT(stimulus_range, parameters)
+            pseudoWWT = model.init_pseudoWWT(wwt_stimulus_range, parameters)
 
             predictions = model.predict()
             predictions.index = train.index
@@ -250,6 +251,14 @@ def main(subject, sourcedata, trialwise, masks, smoothed, log_space, progressbar
                         max_n_iterations=15000,
                         lag=100,
                                                init_rho=.01, init_sigma2=.01, init_alpha=.99, init_beta=1., learning_rate=.01)
+
+            stimulus_range = np.linspace(1., 28*5, 28*10 -1).astype(np.float32)
+
+            if log_space:
+                stimulus_range = np.log(stimulus_range)
+
+
+            
 
             ll = model.get_stimulus_pdf(
                 test, stimulus_range, parameters, omega, dof=None)
