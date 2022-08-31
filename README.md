@@ -13,5 +13,5 @@ In this reposistory, we provide the code and data for the following:
 1. Trialwise data for hierarchical-Bayesian population-level analysis
 2. Individual-level data for correlations 
 
-**Log**
+# Log
 _August 31_: Uploaded the raw code and files. Will have to clean up the code for reader-friendly usage.  
