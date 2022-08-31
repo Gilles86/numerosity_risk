@@ -1,0 +1,55 @@
+
+
+
+model {
+
+	
+
+### Store The Priors Here
+
+noise.mu ~ dunif(0.0001, 10)
+sigma.mu ~ dunif(-10, 10)
+
+noise.si ~ dunif(0.0000001, 1)
+
+sigma.si ~ dunif(0.0000001, 1)
+
+for (p in 1:ns){
+
+noise.p[p] ~ dnorm(noise.mu, 1/noise.si^2)
+sigma.p[p] ~ dnorm(sigma.mu, 1/sigma.si^2)
+
+}
+
+
+for (i in 1:N) {
+    	
+    	
+### The Model 	    
+                
+		choice_data[i] ~ dbern(choice_dataHat[i])
+		choice_dataPred[i] ~ dbern(choice_dataHat[i])
+		         	
+		#choice_dataHat[i] <- pnorm( noise[i]*log(x[i]) - sigma[i],  0 , 1  )	
+		choice_dataHat[i] <- pnorm( noise[i]*log(x[i]/c[i]) - sigma[i],  0 , 1  )	
+
+                #choice_dataHat[i] <- pnorm( (log(x[i]/c[i]) - (beta[i]^-1)*(alpha[i] - log(p^-1)))/(sqrt(2)*noise[i]),  0 , 1  )	
+
+ 		#beta[i] <- (sigma[i]^2)/(sigma[i]^2 + noise[i]^2)
+
+		noise[i] <- max(0.0001, noise.p[idXP[i]]  )
+		sigma[i] <- max(0.0001, sigma.p[idXP[i]]  )
+
+}
+
+  	
+
+p <- 0.55
+  	
+
+
+}
+
+
+
+

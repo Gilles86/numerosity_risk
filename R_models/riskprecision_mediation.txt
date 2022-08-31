@@ -1,0 +1,58 @@
+model{
+
+# Prior distributions
+
+a1 ~ dnorm(0, .001); # prior for a1
+a2 ~ dnorm(0, .001); # prior for a2
+ b ~ dnorm(0, .001); # prior for b
+c1 ~ dnorm(0, .001); # prior for c1
+c2 ~ dnorm(0, .001); # prior for c2
+#d1 ~ dnorm(0, .001); # prior for d1
+#d2 ~ dnorm(0, .001); # prior for d2
+# e ~ dnorm(0, .001); # prior for e
+
+intmag ~ dnorm(10, .04); # prior for the intercept Mediation
+intrisk ~ dnorm(10, .04); # prior for the intercept Y(total)
+#intrisk_neuro ~ dnorm(10, .04); # prior for the intercept Y(neuro)
+#intrisk_behav ~ dnorm(10, .04); # prior for the intercept Y(behavior)
+
+tau.mag ~ dgamma(.01, .01); # prior for the error precision M
+tau.risk ~ dgamma(.01, .01); # prior for the error precision Y
+#tau.risk_neuro ~ dgamma(.01, .01); # prior for the error precision X
+#tau.risk_behav ~ dgamma(.01, .01); # prior for the error precision X
+
+var_mag <- 1/tau.mag; 	                    # residual variance of Mediation
+var_risk <- 1/tau.risk;                     # residual variance of Y(total)
+#var_risk_neuro <- 1/tau.risk_neuro;         # residual variance of Y(neuro)
+#var_risk_behav <- 1/tau.risk_behav;         # residual variance of Y(behav)
+
+# Potential outcomes estimators
+pnie_r <- a1*b;
+pnie_l <- a2*b;
+
+cde_r <- c1;
+cde_l <- c2;
+
+tnie_r <- pnie_r + cde_r;
+tnie_l <- pnie_l + cde_l;
+
+for(i in 1:N) {
+# predicted value
+
+### Mediation Results
+mag.prime[i] <- intmag + a1*npcr[i] + a2*npcl[i];                  ### Mediation
+risk.prime[i] <- intrisk + c1*npcr[i] + c2*npcl[i] + b*mag[i];      ### Total Effect 
+
+### Separate Results
+#risk.prime_neuro[i] <- intrisk_neuro + d1*npcr[i] + d2*npcl[i];
+#risk.prime_behav[i] <- intrisk_behav + e*mag[i]
+
+# conditional distributions of m and y
+      mag[i] ~ dnorm(mag.prime[i], tau.mag);
+      risk[i] ~ dnorm(risk.prime[i], tau.risk);
+      #risk_neuro[i] ~ dnorm(risk.prime_neuro[i], tau.risk_neuro);
+      #risk_behav[i] ~ dnorm(risk.prime_behav[i], tau.risk_behav);
+
+} 
+
+}
