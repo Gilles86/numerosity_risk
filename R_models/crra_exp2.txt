@@ -1,0 +1,71 @@
+	
+model{
+
+	gamma.mu ~ dunif(-20,20)
+        alpha.mu ~ dunif(-5,5)
+        #delta.mu ~ dunif(0.0001,2)
+          #eta.mu ~ dunif(0.0001,2)
+
+	gamma.si ~ dunif(0.0000001, 1)
+        alpha.si ~ dunif(0.0000001, 1)
+
+        #delta.si ~ dunif(0.0000001, 1)
+          #eta.si ~ dunif(0.0000001, 1)
+
+	gamma.mu.effect ~ dnorm(0.001, 0.000001)
+
+	alpha.mu.effect ~ dnorm(0.001, 0.000001)
+
+       #delta.mu.effect ~ dnorm(0.001, 0.000001)
+
+          #eta.mu.effect ~ dnorm(0.001, 0.000001)
+
+
+	gamma.si.effect ~ dunif(0.0000001, 1)
+	alpha.si.effect ~ dunif(0.0000001, 1)
+
+        #delta.si.effect ~ dunif(0.0000001, 1)
+	  #eta.si.effect ~ dunif(0.0000001, 1)
+
+for (p in 1:ns){
+
+	    
+	       gamma.p[p] ~ dnorm(gamma.mu, 1/gamma.si^2)
+               alpha.p[p] ~ dnorm(alpha.mu, 1/alpha.si^2)
+	       #delta.p[p] ~ dnorm(delta.mu, 1/delta.si^2)
+	         #eta.p[p] ~ dnorm(eta.mu, 1/eta.si^2)
+
+	gamma.p.effect[p] ~ dnorm(gamma.mu.effect, 1/gamma.si.effect^2)
+        alpha.p.effect[p] ~ dnorm(alpha.mu.effect, 1/alpha.si.effect^2)
+        #delta.p.effect[p] ~ dnorm(delta.mu.effect, 1/delta.si.effect^2)
+         #eta.p.effect[p] ~ dnorm(eta.mu.effect, 1/eta.si.effect^2)
+
+}
+
+for (i in 1:N) {
+
+	     choice_data[i] ~ dbern(choice_dataHat[i])
+
+ 	  choice_dataHat[i] <- 1/(1 + exp(-exp(gamma[i])*(vCounteroffer[i] - crra_risk[i] ) ))
+           #choice_dataHat[i] <- 1/(1 + exp(-(gamma[i])*(vCounteroffer[i] - crra_amb[i] ) ))
+
+               crra_risk[i] <- prob_high[i]*vRisk_high[i] + prob_low[i]*vRisk_low[i] #prob_low[i]*(0^(1 - alpha[i]))/(1 - alpha[i])
+               #crra_amb[i] <- (delta[i])*vAmb_high[i] + (1-delta[i])*vAmb_low[i] 
+
+              vRisk_high[i] <- (risk_high[i]^(1 - alpha[i]))/(1 - alpha[i])
+               vRisk_low[i] <- ((risk_low[i])^(1 - alpha[i]))/(1 - alpha[i])
+
+              #vAmb_high[i] <- (amb_high[i]^(1 + alpha[i]))/(1 + alpha[i])
+               #vAmb_low[i] <- (amb_low[i]^(1 + alpha[i]))/(1 +  alpha[i])
+
+           vCounteroffer[i] <- ((counteroffer[i])^(1 - alpha[i]))/(1 - alpha[i])
+
+		    gamma[i] <- max(0.0001, gamma.p[idXP[i]]  + mag[i]*gamma.p.effect[idXP[i]])
+	            alpha[i] <- max(0.0001, alpha.p[idXP[i]]  + mag[i]*alpha.p.effect[idXP[i]])
+  	            #delta[i] <- max(0.0001, delta.p[idXP[i]]  + mag[i]*delta.p.effect[idXP[i]])
+                      #eta[i] <- max(0.0001, eta.p[idXP[i]]  + mag[i]*eta.p.effect[idXP[i]])
+
+}
+
+
+}
