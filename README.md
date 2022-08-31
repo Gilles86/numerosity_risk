@@ -14,4 +14,5 @@ In this reposistory, we provide the code and data for the following:
 2. Individual-level data for correlations 
 
 # ** New ** Log
-_August 31_: Uploaded the raw code and files. Will have to clean up the code for reader-friendly usage.  
+_July 18_   : Uploaded files on Github. 
+_August 31_ : Arranged raw code and files into respective folders. Will have to clean up the code for reader-friendly usage.  
