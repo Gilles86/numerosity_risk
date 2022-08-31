@@ -1,0 +1,70 @@
+	
+model{
+
+	gamma.mu ~ dunif(-2,2)
+        alpha.mu ~ dunif(0.001,2)
+	delta.mu ~ dunif(0.001,2)
+       #theta.mu ~ dunif(0.0001,1)
+
+	alpha.si ~ dunif(0.0000001, 1)
+
+	gamma.si ~ dunif(0.0000001, 1)
+        delta.si ~ dunif(0.0000001, 1)
+       #theta.si ~ dunif(0.0000001, 1)
+
+	
+        gamma.mu.effect ~ dnorm(0.001, 0.000001)
+    
+	alpha.mu.effect ~ dnorm(0.001, 0.000001)
+
+	delta.mu.effect ~ dnorm(0.001, 0.000001)
+
+       #theta.mu.effect ~ dnorm(0.001, 0.000001)
+
+	gamma.si.effect ~ dunif(0.0000001, 1) 
+        alpha.si.effect ~ dunif(0.0000001, 1)
+
+        delta.si.effect ~ dunif(0.0000001, 1)
+       #theta.si.effect ~ dunif(0.0000001, 1)
+          
+      
+for (p in 1:ns){
+
+	       
+	       gamma.p[p] ~ dnorm(gamma.mu, 1/gamma.si^2)
+               alpha.p[p] ~ dnorm(alpha.mu, 1/alpha.si^2)
+               delta.p[p] ~ dnorm(delta.mu, 1/delta.si^2)
+              #theta.p[p] ~ dnorm(theta.mu, 1/theta.si^2)
+
+	gamma.p.effect[p] ~ dnorm(gamma.mu.effect, 1/gamma.si.effect^2)
+        alpha.p.effect[p] ~ dnorm(alpha.mu.effect, 1/alpha.si.effect^2)
+        delta.p.effect[p] ~ dnorm(delta.mu.effect, 1/delta.si.effect^2)
+        #theta.p.effect[p] ~ dnorm(theta.mu.effect, 1/theta.si.effect^2)
+
+
+}
+
+for (i in 1:N) {
+
+	     choice_data[i] ~ dbern(choice_dataHat[i])
+
+ 	  choice_dataHat[i] <- 1/(1 + exp(-(1-gamma[i])*(counteroffer[i] - prosRisk[i])))
+
+                prosRisk[i] <- (r_high[i]*risk_high[i] + r_low[i]*risk_low[i])
+
+                  r_high[i] <-  (prob_high[i]*(0.8-alpha[i])^(-sal_high[i]))/(prob_high[i]*(1-alpha[i])^(-sal_high[i]) + prob_low[i]*(0.8-alpha[i])^(-sal_low[i]))
+                   r_low[i] <-   (prob_low[i]*(0.8-alpha[i])^(-sal_low[i]))/(prob_high[i]*(1-alpha[i])^(-sal_high[i]) + prob_low[i]*(0.8-alpha[i])^(-sal_low[i]))
+
+                sal_high[i] <- abs(risk_high[i] - counteroffer[i])/(abs(risk_high[i]) + abs(counteroffer[i]) - (1-delta[i]))
+                 sal_low[i] <- abs(risk_low[i]  - counteroffer[i])/(abs(risk_low[i])  + abs(counteroffer[i]) - (1-delta[i]))
+       
+		    gamma[i] <- max(0.0001, gamma.p[idXP[i]]  + mag[i]*gamma.p.effect[idXP[i]])
+  	            alpha[i] <- max(0.0001, alpha.p[idXP[i]]  + mag[i]*alpha.p.effect[idXP[i]]) 
+ 	            delta[i] <- max(0.0001, delta.p[idXP[i]]  - mag[i]*delta.p.effect[idXP[i]])
+                   #theta[i] <- max(0.0001, theta.p[idXP[i]]  + mag[i]*theta.p.effect[idXP[i]])
+
+
+}
+
+
+}

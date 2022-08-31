@@ -1,0 +1,75 @@
+
+
+
+model {
+
+	
+
+### Store The Priors Here
+
+noise.mu ~ dunif(0.00001, 20)
+sigma.mu ~ dunif(0.00001, 20)
+alpha.mu ~ dunif(-20, 20)
+
+noise.mu.coin ~ dnorm(0.001, 0.000001)
+ 
+sigma.mu.coin ~ dnorm(0.001, 0.000001)
+ 
+alpha.mu.coin ~ dnorm(0.001, 0.000001)
+ 
+
+noise.si ~ dunif(0.0000001, 1)
+
+sigma.si ~ dunif(0.0000001, 1)
+alpha.si ~ dunif(0.0000001, 1)
+
+noise.si.coin ~ dunif(0.00001, 1)
+
+sigma.si.coin ~ dunif(0.00001, 1)
+
+alpha.si.coin ~ dunif(0.00001, 1)
+
+	
+for (p in 1:ns){
+
+noise.p[p] ~ dnorm(noise.mu, 1/noise.si^2)
+sigma.p[p] ~ dnorm(sigma.mu, 1/sigma.si^2)
+alpha.p[p] ~ dnorm(alpha.mu, 1/alpha.si^2)
+
+noise.p.coin[p] ~ dnorm(noise.mu.coin, 1/noise.si.coin^2)
+sigma.p.coin[p] ~ dnorm(sigma.mu.coin, 1/sigma.si.coin^2)
+alpha.p.coin[p] ~ dnorm(alpha.mu.coin, 1/alpha.si.coin^2)
+
+}
+
+
+for (i in 1:N) {
+    	
+    	
+### The Model 	    
+ 				    
+		choice_data[i] ~ dbern(choice_dataHat[i])
+
+		choice_dataHat[i] <- pnorm( (log(x[i]/c[i]) - (beta[i]^-1)*(log(prob[i]^-1) - alpha[i]))/(sqrt(2)*(noise[i])),  0 , 1  )
+	
+		beta[i] <- (sigma[i]^2)/(sigma[i]^2 + noise[i]^2)
+		
+
+		noise[i] <- max(0.0001, noise.p[idXP[i]] + num[i]*noise.p.coin[idXP[i]])
+		sigma[i] <- max(0.0001, sigma.p[idXP[i]] + num[i]*sigma.p.coin[idXP[i]])
+                alpha[i] <- max(0.0001, alpha.p[idXP[i]] + num[i]*alpha.p.coin[idXP[i]])
+
+}
+
+  	
+
+p <- 0.55
+  	
+
+
+}
+
+
+
+
+

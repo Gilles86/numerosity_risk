@@ -1,0 +1,60 @@
+model{
+
+# Prior distributions
+
+a1 ~ dnorm(0, .001); # prior for a1
+
+ b1 ~ dnorm(0, .001); # prior for b
+ b2 ~ dnorm(0, .001); # prior for b
+
+c1 ~ dnorm(0, .001); # prior for c1
+
+d1 ~ dnorm(0, .001); # prior for d1
+
+      intmag ~ dnorm(0, 0.0001); # prior for the intercept Mediation
+ intrisk_sym ~ dnorm(0, 0.0001); # prior for the intercept Y(total)
+intrisk_coin ~ dnorm(0, 0.0001); # prior for the intercept Y(total)
+
+      tau.mag ~ dgamma(.01, .01); # prior for the error precision M
+ tau.risk_sym ~ dgamma(.01, .01); # prior for the error precision Y
+tau.risk_coin ~ dgamma(.01, .01); # prior for the error precision Y
+
+      var_mag <- 1/tau.mag; 	                    # residual variance of Mediation
+ var_risk_sym <- 1/tau.risk_sym;                    # residual variance of Y(total)
+var_risk_coin <- 1/tau.risk_coin;                   # residual variance of Y(total)
+
+# Potential outcomes estimators
+pnie_int_r_sym <- a1*b1;
+
+pnie_int_r_coin <- a1*b2;
+
+cde_int_r_sym <- c1;
+
+cde_int_r_coin <- d1;
+
+tnie_int_r_sym <- pnie_int_r_sym + cde_int_r_sym;
+
+tnie_int_r_coin <- pnie_int_r_coin + cde_int_r_coin;
+
+
+for(i in 1:N) {
+# predicted value
+
+### Mediation Results
+#      mag.prime[i] <- intmag  + a1*npc_int_r[i] + a2*npc_int_l[i] + a3*npc_slp_r[i] + a4*npc_slp_l[i];                 ### Mediation
+# risk.prime_sym[i] <- intrisk_sym + c1*npc_int_r[i] + c2*npc_int_l[i] + c3*npc_slp_r[i] + c4*npc_slp_l[i] + b1*mag[i];      ### Total Effect 
+#risk.prime_coin[i] <- intrisk_coin + d1*npc_int_r[i] + d2*npc_int_l[i] + d3*npc_slp_r[i] + d4*npc_slp_l[i] + b2*mag[i];      ### Total Effect 
+
+
+      mag.prime[i] <- intmag + a1*npc_slp_r[i];                     ### Mediation
+ risk.prime_sym[i] <- intrisk_sym + c1*npc_slp_r[i] + b1*mag[i];    ### Total Effect 
+risk.prime_coin[i] <- intrisk_coin + d1*npc_slp_r[i] + b2*mag[i];   ### Total Effect 
+
+# conditional distributions of m and y
+      mag[i] ~ dnorm(mag.prime[i], tau.mag);
+ risk_sym[i] ~ dnorm(risk.prime_sym[i], tau.risk_sym);
+risk_coin[i] ~ dnorm(risk.prime_coin[i], tau.risk_coin);
+
+} 
+
+}

@@ -1,0 +1,22 @@
+model{
+
+# Prior distributions
+
+alpha ~ dnorm(0, .001); # prior for a1
+intercept ~ dnorm(10, .04); # prior for the intercept Mediation
+
+tau.y ~ dgamma(.01, .01); # prior for the error precision M
+tau.risk ~ dgamma(.01, .01); # prior for the error precision Y
+
+for(i in 1:N) {
+
+### Mediation Results
+y.prime_var[i] <- intercept + alpha*x_var[i];              
+
+# conditional distributions of m and y
+y_var[i] ~ dnorm(y.prime_var[i], tau.y);
+
+
+} 
+
+}
